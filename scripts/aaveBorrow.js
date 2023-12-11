@@ -40,12 +40,24 @@ async function main() {
   console.log(`You can borrow ${amountDaiToBorrow} DAI`);
   const amountDaiToBorrowWei = ethers.parseEther(amountDaiToBorrow.toString());
 
-  console.log(amountDaiToBorrowWei);
-
   // Borrowing from aave
   const daiTokenAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+  console.log("Borrowing....");
   await borrowDai(daiTokenAddress, lendingPool, amountDaiToBorrowWei, deployer);
   await getBorrowUserData(lendingPool, deployer);
+
+  // Repaying debt
+  console.log("Repaying.....");
+  await repay(amountDaiToBorrowWei, daiTokenAddress, lendingPool, deployer);
+  await getBorrowUserData(lendingPool, deployer);
+}
+
+// Repay
+async function repay(amount, daiAddress, lendingPool, account) {
+  await approveERC20(daiAddress, lendingPool.target, amount, account);
+  const repayTx = await lendingPool.repay(daiAddress, amount, 2, account);
+  await repayTx.wait();
+  console.log("Repaid!");
 }
 
 // Borrow DAI
@@ -55,7 +67,6 @@ async function borrowDai(
   amountDaiToBorrowWei,
   account
 ) {
-  console.log("In here");
   const borrowTx = await lendingPool.borrow(
     daiAddress,
     amountDaiToBorrowWei,
@@ -63,7 +74,6 @@ async function borrowDai(
     0,
     account
   );
-  console.log("Over here");
   await borrowTx.wait();
   console.log("Here");
   console.log("You have borrowed!");
